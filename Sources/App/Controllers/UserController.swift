@@ -6,8 +6,10 @@ struct UserController: RouteCollection {
   func boot(routes: RoutesBuilder) throws {
     let user = routes.grouped("user", ":username")
     user.get(use: index)
+    user.get("log", use: logIndex)
     user.post(use: create)
     user.delete(use: delete)
+
   }
 
   func index(req: Request) async throws -> Int {
@@ -17,6 +19,20 @@ struct UserController: RouteCollection {
     guard let _ = try await User.find(username, on: req.db) else {
       throw Abort(.notFound)
     }
+    return try await SendEvent.point(of: username, on: req.db)
+  }
+
+  func logIndex(req: Request) async throws -> Int {
+    guard let username = req.parameters.get("username") else {
+      req.logger.info("username is nil")
+      throw Abort(.badRequest)
+    }
+    req.logger.info("username is \(username)")
+    guard let _ = try await User.find(username, on: req.db) else {
+      req.logger.info("user is nil")
+      throw Abort(.notFound)
+    }
+    req.logger.info("user is not nil")
     return try await SendEvent.point(of: username, on: req.db)
   }
 
