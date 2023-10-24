@@ -11,7 +11,7 @@ extension SendEvent {
           .filter(\.$to.$id == username)
       }
       .sort(\.$createdAt)
-      .chunk(max: 64) { results in
+      .chunk(max: 1024) { results in
         pointResult = results.reduce(pointResult) { (pointResult, eventResult) in
           pointResult.flatMap { point in
             eventResult.map { event in
