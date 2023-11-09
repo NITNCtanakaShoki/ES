@@ -6,8 +6,8 @@ func logMemoryUsage(title: String, logger: Logger) {
     do {
       let contents = try String(contentsOfFile: "/proc/self/statm", encoding: .utf8)
       let parts = contents.split(separator: " ")
-      if let pages = Int64(parts[0]) {
-        let pageSize: Int64 = 4096
+      if let pages = parts.first.map(String.init).flatMap(Int.init) {
+        let pageSize: Int = 4096
         logger.info("\(title),MEMORY: \(pages * pageSize)")
       }
     } catch {
