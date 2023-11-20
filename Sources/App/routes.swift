@@ -9,8 +9,10 @@ func routes(_ app: Application) throws {
   app.get("hello") { req async -> String in
     "Hello, world!"
   }
+  
+  let title = Environment.get("TITLE") ?? "title"
 
-  try app.register(collection: UserController())
-  try app.register(collection: SendController())
+  try app.register(collection: UserController(title: title))
+  try app.register(collection: SendController(title: title))
   try app.register(collection: ResetController())
 }

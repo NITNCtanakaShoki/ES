@@ -32,7 +32,7 @@ extension SendEvent {
     return try pointResult.get()
   }
 
-  static func logPoint(of username: String, logger: Logger, on db: Database) async throws -> Int {
+  static func logPoint(of username: String, title: String, logger: Logger, on db: Database) async throws -> Int {
     var pointResult: Result<Int, Error> = .success(0)
     let start = Date()
     logger.info("BEGIN-QUERY")

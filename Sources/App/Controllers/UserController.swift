@@ -2,7 +2,9 @@ import Fluent
 import Vapor
 
 struct UserController: RouteCollection {
-
+  
+  var title: String
+  
   func boot(routes: RoutesBuilder) throws {
     let user = routes.grouped("user", ":username")
     user.get(use: index)
@@ -24,16 +26,16 @@ struct UserController: RouteCollection {
 
   func logIndex(req: Request) async throws -> Int {
     guard let username = req.parameters.get("username") else {
-      req.logger.info("username is nil")
+      req.logger.info("\(title): username is nil")
       throw Abort(.badRequest)
     }
     req.logger.info("username is \(username)")
     guard let _ = try await User.find(username, on: req.db) else {
-      req.logger.info("user is nil")
+      req.logger.info("\(title): user is nil")
       throw Abort(.notFound)
     }
-    req.logger.info("user is not nil")
-    return try await SendEvent.point(of: username, on: req.db)
+    req.logger.info("\(title): user is not nil")
+    return try await SendEvent.point(of: username, title: title, on: req.db)
   }
 
   func create(req: Request) async throws -> HTTPStatus {
