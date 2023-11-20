@@ -13,6 +13,6 @@ func routes(_ app: Application) throws {
   let title = Environment.get("TITLE") ?? "title"
 
   try app.register(collection: UserController(title: title))
-  try app.register(collection: SendController(title: title))
+  try app.register(collection: SendController())
   try app.register(collection: ResetController())
 }

@@ -3,7 +3,7 @@ import PostgresKit
 import Vapor
 
 struct SendController: RouteCollection {
-
+  
   func boot(routes: RoutesBuilder) throws {
     let point = routes.grouped("send", ":from", ":to")
     point.post(use: send)

@@ -35,7 +35,7 @@ struct UserController: RouteCollection {
       throw Abort(.notFound)
     }
     req.logger.info("\(title): user is not nil")
-    return try await SendEvent.point(of: username, title: title, on: req.db)
+    return try await SendEvent.logPoint(of: username, title: title, logger: req.logger, on: req.db)
   }
 
   func create(req: Request) async throws -> HTTPStatus {
