@@ -17,6 +17,7 @@ struct ResetController: RouteCollection {
     }
     try await SendEvent.query(on: req.db).delete()
     try await User.query(on: req.db).delete()
+    req.logger.critical("RESET")
     return .ok
   }
 }

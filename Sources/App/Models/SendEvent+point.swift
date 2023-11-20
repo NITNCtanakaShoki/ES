@@ -35,7 +35,7 @@ extension SendEvent {
   static func logPoint(of username: String, title: String, logger: Logger, on db: Database) async throws -> Int {
     var pointResult: Result<Int, Error> = .success(0)
     let start = Date()
-    logger.info("BEGIN-QUERY")
+    logger.critical("BEGIN-QUERY")
     var count = 0
     try await query(on: db)
       .group(.or) {
@@ -46,7 +46,7 @@ extension SendEvent {
       .sort(\.$createdAt)
       .chunk(max: maxChunk) { results in
         count += results.count
-        logger.info(
+        logger.critical(
           "CHUNK-TIME: \(Date().timeIntervalSince(start)),CHUNK-COUNT: \(results.count)"
         )
         logMemoryUsage(title: "CHUNK-COUNT: \(results.count),", logger: logger)
@@ -62,7 +62,7 @@ extension SendEvent {
           }
         }
       }
-    logger.info("END-QUERY, QUERY-TIME: \(Date().timeIntervalSince(start)),EVENT-COUNT: \(count)")
+    logger.critical("END-QUERY, QUERY-TIME: \(Date().timeIntervalSince(start)),EVENT-COUNT: \(count)")
     return try pointResult.get()
   }
 }

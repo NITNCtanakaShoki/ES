@@ -26,15 +26,15 @@ struct UserController: RouteCollection {
 
   func logIndex(req: Request) async throws -> Int {
     guard let username = req.parameters.get("username") else {
-      req.logger.info("\(title): username is nil")
+      req.logger.critical("\(title): username is nil")
       throw Abort(.badRequest)
     }
-    req.logger.info("username is \(username)")
+    req.logger.critical("username is \(username)")
     guard let _ = try await User.find(username, on: req.db) else {
-      req.logger.info("\(title): user is nil")
+      req.logger.critical("\(title): user is nil")
       throw Abort(.notFound)
     }
-    req.logger.info("\(title): user is not nil")
+    req.logger.critical("\(title): user is not nil")
     return try await SendEvent.logPoint(of: username, title: title, logger: req.logger, on: req.db)
   }
 
