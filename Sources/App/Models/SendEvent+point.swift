@@ -7,7 +7,6 @@ extension SendEvent {
   static var maxChunk = 1024
 
   static func point(of username: String, on db: Database) async throws -> Int {
-    let maxChunk = maxChunk
     var pointResult: Result<Int, Error> = .success(0)
     try await query(on: db)
       .group(.or) {
@@ -16,15 +15,13 @@ extension SendEvent {
           .filter(\.$to.$id == username)
       }
       .sort(\.$createdAt)
-      .chunk(max: maxChunk) { results in
-        pointResult = results.reduce(pointResult) { (pointResult, eventResult) in
-          pointResult.flatMap { point in
-            eventResult.map { event in
-              if event.$to.id == username {
-                return point + event.point
-              } else {
-                return point - event.point
-              }
+      .all { result in
+        pointResult = pointResult.flatMap { point in
+          result.map { event in
+            if event.$to.id == username {
+              return point + event.point
+            } else {
+              return point - event.point
             }
           }
         }
@@ -44,20 +41,20 @@ extension SendEvent {
           .filter(\.$to.$id == username)
       }
       .sort(\.$createdAt)
-      .chunk(max: maxChunk) { results in
-        count += results.count
-        logger.critical(
-          "CHUNK-TIME: \(Date().timeIntervalSince(start)),CHUNK-COUNT: \(results.count)"
-        )
-        logMemoryUsage(title: "CHUNK-COUNT: \(results.count),", logger: logger)
-        pointResult = results.reduce(pointResult) { (pointResult, eventResult) in
-          pointResult.flatMap { point in
-            eventResult.map { event in
-              if event.$to.id == username {
-                return point + event.point
-              } else {
-                return point - event.point
-              }
+      .all { result in
+        count += 1
+        if count % 10000 == 0{
+          logger.critical(
+            "CHUNK-TIME: \(Date().timeIntervalSince(start)),CHUNK-COUNT: 1"
+          )
+          logMemoryUsage(title: "CHUNK-COUNT: 1,", logger: logger)
+        }
+        pointResult = pointResult.flatMap { point in
+          result.map { event in
+            if event.$to.id == username {
+              return point + event.point
+            } else {
+              return point - event.point
             }
           }
         }
