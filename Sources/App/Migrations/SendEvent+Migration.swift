@@ -16,8 +16,14 @@ extension SendEvent {
         .create()
 
       let sql = database as! SQLDatabase
-      _ = try await sql.raw("CREATE INDEX send_events_created_at_index ON send_events (from_username, to_username, created_at)")
-        .all()
+      _ = try await sql.raw(
+        "CREATE INDEX send_events_index_1 ON send_events (created_at, id, from_username, to_username, created_at, id)"
+      )
+      .all()
+      _ = try await sql.raw(
+        "CREATE INDEX send_events_index_2 ON send_events (from_username, to_username, created_at, id)"
+      )
+      .all()
     }
 
     func revert(on database: Database) async throws {
