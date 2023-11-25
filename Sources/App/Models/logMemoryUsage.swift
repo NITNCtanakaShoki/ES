@@ -8,7 +8,7 @@ func logMemoryUsage(title: String, logger: Logger) {
       let parts = contents.split(separator: " ")
       if let pages = parts.first.map(String.init).flatMap(UInt64.init) {
         let pageSize: UInt64 = 4096
-        logger.critical("\(title),MEMORY: \(pages * pageSize)") // Bytes
+        logger.critical("\(title),MEMORY: \(pages * pageSize)")  // Bytes
       }
     } catch {
       logger.error("\(title),MEMORY-ERR: \(error)")

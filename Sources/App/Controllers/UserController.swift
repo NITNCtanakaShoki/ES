@@ -2,9 +2,9 @@ import Fluent
 import Vapor
 
 struct UserController: RouteCollection {
-  
+
   var title: String
-  
+
   func boot(routes: RoutesBuilder) throws {
     let user = routes.grouped("user", ":username")
     user.get(use: index)
