@@ -93,9 +93,8 @@ extension SendEvent {
       count += events.count
       if count % 10000 < chunk {
         logger.critical(
-          "CHUNK-TIME: \(Date().timeIntervalSince(start)),CHUNK-COUNT: \(events.count)"
+          "CHUNK-TIME: \(Date().timeIntervalSince(start)), CHUNK-COUNT: \(events.count)"
         )
-        logMemoryUsage(title: "CHUNK-COUNT: \(events.count),", logger: logger)
       }
 
       if events.isEmpty {
