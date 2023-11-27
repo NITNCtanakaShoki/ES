@@ -91,7 +91,7 @@ extension SendEvent {
         .all()
 
       count += events.count
-      if count % 10000 == 0 {
+      if count % 10000 < chunk {
         logger.critical(
           "CHUNK-TIME: \(Date().timeIntervalSince(start)),CHUNK-COUNT: \(events.count)"
         )
