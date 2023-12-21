@@ -23,9 +23,6 @@ public func configure(_ app: Application) async throws {
   app.migrations.add(User.Migration())
   app.migrations.add(SendEvent.Migration())
 
-  SendEvent.maxChunk = Environment.get("MAX_CHUNK").flatMap(Int.init) ?? 1024
-  app.logger.warning("MAX-CHUNK \(SendEvent.maxChunk)")
-
   // register routes
   try routes(app)
 }

@@ -17,8 +17,8 @@ final class SendEvent: Model {
   @Field(key: "point")
   var point: Int
 
-  @Timestamp(key: "created_at", on: .create)
-  var createdAt: Date?
+  @Field(key: "created_at")
+  var createdAt: Date
 
   init() {}
 
@@ -26,7 +26,8 @@ final class SendEvent: Model {
     id: UUID? = nil,
     fromUsername: User.IDValue,
     toUsername: User.IDValue,
-    point: Int
+    point: Int,
+    createdAt: Date = Date()
   ) {
     self.id = id
     self.$from.id = fromUsername
@@ -37,13 +38,7 @@ final class SendEvent: Model {
 
 extension SendEvent: Comparable {
   static func < (lhs: SendEvent, rhs: SendEvent) -> Bool {
-    guard let left = lhs.createdAt else {
-      return true
-    }
-    guard let right = rhs.createdAt else {
-      return false
-    }
-    return left < right
+    lhs.createdAt < rhs.createdAt
   }
 
   static func == (lhs: SendEvent, rhs: SendEvent) -> Bool {

@@ -4,30 +4,99 @@ import Vapor
 
 extension SendEvent {
 
-  static var maxChunk = 1024
+  /// ストリームでモデルを受け取って計算する
+  static func streamPoint(of username: String, on db: Database) async throws -> Int {
+    var aggregationResult = Result<Int, any Error>.success(0)
 
-  static func point(of username: String, on db: Database) async throws -> Int {
-    let chunk = maxChunk
+    try await query(on: db)
+      .group(.or) {
+        $0.filter(\.$from.$id == username)
+          .filter(\.$to.$id == username)
+      }
+      .sort(\.$createdAt)
+      .sort(\.$id)
+      .all { eventResult in
+        aggregationResult = aggregationResult.flatMap { aggregation in
+          eventResult.map { event in
+            aggregation + (event.$to.id == username ? event.point : -event.point)
+          }
+        }
+      }
 
-    var fromDate: Date?
-    var fromID: UUID?
+    return try aggregationResult.get()
+  }
 
+  // 一定数ずつ区切って取得する
+  static func chunkPoint(of username: String, chunk: Int, on db: Database, logger: Logger)
+    async throws -> Int
+  {
+    var aggregationResult = Result<Int, any Error>.success(0)
+
+    try await query(on: db)
+      .group(.or) {
+        $0.filter(\.$from.$id == username)
+          .filter(\.$to.$id == username)
+      }
+      .sort(\.$createdAt)
+      .sort(\.$id)
+      .chunk(max: chunk) { eventResults in
+        if eventResults.count > chunk {
+          logger.critical("eventResults.count: \(eventResults.count) > chunk: \(chunk)")
+        }
+        aggregationResult = eventResults.reduce(aggregationResult) { (sumResult, eventResult) in
+          sumResult.flatMap { sum in
+            eventResult.map { event in
+              sum + (event.$to.id == username ? event.point : -event.point)
+            }
+          }
+        }
+      }
+
+    return try aggregationResult.get()
+  }
+
+  // 一定数ずつ区切って取得する
+  struct ChunkResult {
+    var point: Int
+    var counts: [Int]
+  }
+  static func logChunkPoint(of username: String, chunk: Int, on db: Database) async throws
+    -> ChunkResult
+  {
+    var aggregationResult = Result<Int, any Error>.success(0)
+
+    var counts = [Int]()
+
+    try await query(on: db)
+      .group(.or) {
+        $0.filter(\.$from.$id == username)
+          .filter(\.$to.$id == username)
+      }
+      .sort(\.$createdAt)
+      .sort(\.$id)
+      .chunk(max: chunk) { eventResults in
+        counts.append(eventResults.count)
+
+        aggregationResult = eventResults.reduce(aggregationResult) { (sumResult, eventResult) in
+          sumResult.flatMap { sum in
+            eventResult.map { event in
+              sum + (event.$to.id == username ? event.point : -event.point)
+            }
+          }
+        }
+      }
+
+    return .init(point: try aggregationResult.get(), counts: counts)
+  }
+
+  static func pagingByOffsetPoint(of username: String, chunk: Int, on db: Database) async throws
+    -> Int
+  {
+    var offset = 0
     var point = 0
 
     while true {
-      var query = query(on: db)
-      if let fromDate, let fromID {
-        query = query.group(.or) {
-          $0.filter(\.$createdAt > fromDate)
-            .group(.and) {
-              $0
-                .filter(\.$createdAt == fromDate)
-                .filter(\.$id > fromID)
-            }
-        }
-      }
-      let events =
-        try await query
+      let events = try await query(on: db)
         .group(.or) {
           $0
             .filter(\.$from.$id == username)
@@ -35,83 +104,93 @@ extension SendEvent {
         }
         .sort(\.$createdAt)
         .sort(\.$id)
+        .offset(offset)
         .limit(chunk)
         .all()
       if events.isEmpty {
         break
       }
       point = events.reduce(point) { point, event in
-        if event.$to.id == username {
-          return point + event.point
-        } else {
-          return point - event.point
-        }
+        point + (event.$to.id == username ? event.point : -event.point)
       }
-      fromDate = events.last?.createdAt
-      fromID = events.last?.id
+      offset += chunk
     }
     return point
   }
 
-  static func logPoint(of username: String, title: String, logger: Logger, on db: Database)
-    async throws -> Int
+  /// 最後の日付からINDEXを有効活用したページング
+  static func pagingByLastPoint(of username: String, chunk: Int, on db: Database) async throws
+    -> Int
   {
+    var from: (Date, UUID)?
     var point = 0
-    let start = Date()
-    logger.critical("BEGIN-QUERY \(title)")
-    var count = 0
-
-    let chunk = maxChunk
-
-    var fromDate: Date?
-    var fromID: UUID?
 
     while true {
-      var query = query(on: db)
-      if let fromDate, let fromID {
-        query = query.group(.or) {
-          $0.filter(\.$createdAt > fromDate)
-            .group(.and) {
-              $0
-                .filter(\.$createdAt == fromDate)
-                .filter(\.$id > fromID)
-            }
-        }
-      }
-      let events =
-        try await query
-        .group(.or) {
-          $0
-            .filter(\.$from.$id == username)
-            .filter(\.$to.$id == username)
-        }
-        .sort(\.$createdAt)
-        .sort(\.$id)
-        .limit(chunk)
-        .all()
-
-      count += events.count
-      if count % 10000 < chunk {
-        logger.critical(
-          "CHUNK-TIME: \(Date().timeIntervalSince(start)), CHUNK-COUNT: \(events.count)"
-        )
-      }
-
+      let events = try await fetchPagingEvents(
+        of: username, fromDate: from?.0, fromID: from?.1, limit: chunk, on: db)
       if events.isEmpty {
         break
       }
       point = events.reduce(point) { point, event in
-        if event.$to.id == username {
-          return point + event.point
-        } else {
-          return point - event.point
-        }
+        point + (event.$to.id == username ? event.point : -event.point)
       }
-      fromDate = events.last?.createdAt
-      fromID = events.last?.id
+      if let last = events.last, let id = last.id {
+        from = (last.createdAt, id)
+      }
     }
-    logger.critical(
-      "END-QUERY, QUERY-TIME: \(Date().timeIntervalSince(start)),EVENT-COUNT: \(count)")
     return point
+  }
+
+  /// 並行に取得と処理を進める
+  static func pagingByLastAsyncPoint(of username: String, chunk: Int, on db: Database) async throws
+    -> Int
+  {
+    var point = 0
+    var events = [SendEvent]()
+
+    while true {
+      let fromDate = events.last?.createdAt
+      let fromID = events.last?.id
+      async let fetching = fetchPagingEvents(
+        of: username, fromDate: fromDate, fromID: fromID, limit: chunk, on: db)
+
+      point = events.reduce(point) { point, event in
+        point + (event.$to.id == username ? event.point : -event.point)
+      }
+
+      events = try await fetching
+
+      if events.isEmpty {
+        break
+      }
+    }
+    return point
+  }
+
+  private static func fetchPagingEvents(
+    of username: String, fromDate: Date?, fromID: UUID?, limit: Int, on db: Database
+  ) async throws -> [SendEvent] {
+    var query = query(on: db)
+    if let fromDate, let fromID {
+      query = query.group(.or) {
+        $0.filter(\.$createdAt > fromDate)
+          .group(.and) {
+            $0
+              .filter(\.$createdAt == fromDate)
+              .filter(\.$id > fromID)
+          }
+      }
+    }
+    return
+      try await query
+      .group(.or) {
+        $0
+          .filter(\.$from.$id == username)
+          .filter(\.$to.$id == username)
+      }
+      .sort(\.$createdAt)
+      .sort(\.$id)
+      .limit(limit)
+      .all()
   }
 }
