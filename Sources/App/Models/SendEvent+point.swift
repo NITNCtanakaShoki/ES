@@ -13,7 +13,7 @@ extension SendEvent {
         $0.filter(\.$from.$id == username)
           .filter(\.$to.$id == username)
       }
-      .sort(\.$createdAt)
+      .sort(\.$date)
       .sort(\.$id)
       .all { eventResult in
         aggregationResult = aggregationResult.flatMap { aggregation in
@@ -37,7 +37,7 @@ extension SendEvent {
         $0.filter(\.$from.$id == username)
           .filter(\.$to.$id == username)
       }
-      .sort(\.$createdAt)
+      .sort(\.$date)
       .sort(\.$id)
       .chunk(max: chunk) { eventResults in
         if eventResults.count > chunk {
@@ -72,7 +72,7 @@ extension SendEvent {
         $0.filter(\.$from.$id == username)
           .filter(\.$to.$id == username)
       }
-      .sort(\.$createdAt)
+      .sort(\.$date)
       .sort(\.$id)
       .chunk(max: chunk) { eventResults in
         counts.append(eventResults.count)
@@ -102,7 +102,7 @@ extension SendEvent {
             .filter(\.$from.$id == username)
             .filter(\.$to.$id == username)
         }
-        .sort(\.$createdAt)
+        .sort(\.$date)
         .sort(\.$id)
         .offset(offset)
         .limit(chunk)
@@ -135,7 +135,7 @@ extension SendEvent {
         point + (event.$to.id == username ? event.point : -event.point)
       }
       if let last = events.last, let id = last.id {
-        from = (last.createdAt, id)
+        from = (last.date, id)
       }
     }
     return point
@@ -149,7 +149,7 @@ extension SendEvent {
     var events = [SendEvent]()
 
     while true {
-      let fromDate = events.last?.createdAt
+      let fromDate = events.last?.date
       let fromID = events.last?.id
       async let fetching = fetchPagingEvents(
         of: username, fromDate: fromDate, fromID: fromID, limit: chunk, on: db)
@@ -173,10 +173,10 @@ extension SendEvent {
     var query = query(on: db)
     if let fromDate, let fromID {
       query = query.group(.or) {
-        $0.filter(\.$createdAt > fromDate)
+        $0.filter(\.$date > fromDate)
           .group(.and) {
             $0
-              .filter(\.$createdAt == fromDate)
+              .filter(\.$date == fromDate)
               .filter(\.$id > fromID)
           }
       }
@@ -188,7 +188,7 @@ extension SendEvent {
           .filter(\.$from.$id == username)
           .filter(\.$to.$id == username)
       }
-      .sort(\.$createdAt)
+      .sort(\.$date)
       .sort(\.$id)
       .limit(limit)
       .all()

@@ -17,8 +17,8 @@ final class SendEvent: Model {
   @Field(key: "point")
   var point: Int
 
-  @Field(key: "created_at")
-  var createdAt: Date
+  @Field(key: "date")
+  var date: Date
 
   init() {}
 
@@ -27,7 +27,7 @@ final class SendEvent: Model {
     fromUsername: User.IDValue,
     toUsername: User.IDValue,
     point: Int,
-    createdAt: Date = Date()
+    createdAt: Date
   ) {
     self.id = id
     self.$from.id = fromUsername
@@ -38,7 +38,7 @@ final class SendEvent: Model {
 
 extension SendEvent: Comparable {
   static func < (lhs: SendEvent, rhs: SendEvent) -> Bool {
-    lhs.createdAt < rhs.createdAt
+    lhs.date < rhs.date
   }
 
   static func == (lhs: SendEvent, rhs: SendEvent) -> Bool {
