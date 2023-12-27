@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  version: 1.0.0
+  title: Event Sourcing API
+servers:
+  - url: 'http://localhost:8080'
+    description: 開発環境
+paths:
+  '/point/stream/{username}':
+    get:
+      description: Stream方式で取得したポイントを返す
+      operationId: PointStream
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Point'
+
+components:
+    schemas:
+        Point:
+          type: object
+          properties:
+            point:
+              type: integer
+              description: ポイント
+            time:
+              type: number
+              description: ポイント集計にかかった時間[sec]
