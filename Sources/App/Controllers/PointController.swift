@@ -4,10 +4,10 @@ struct PointController: RouteCollection {
   func boot(routes: Vapor.RoutesBuilder) throws {
     let point = routes.grouped("point")
     point.get("stream", ":username", use: stream)
-    point.get("chunk", ":username", ":chunk", use: chunk)
-    point.get("paging-offset", ":username", ":chunk", use: pagingOffset)
-    point.get("paging-last", ":username", ":chunk", use: pagingLast)
-    point.get("paging-last-async", ":username", ":chunk", use: pagingLastAsync)
+    point.get("chunk", ":chunk", ":username", use: chunk)
+    point.get("paging-offset", ":chunk", ":username", use: pagingOffset)
+    point.get("paging-last", ":chunk", ":username", use: pagingLast)
+    point.get("paging-last-async", ":chunk", ":username", use: pagingLastAsync)
   }
   
   func stream(req: Request) async throws -> PointJSON {
