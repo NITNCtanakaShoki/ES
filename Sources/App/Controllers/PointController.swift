@@ -12,11 +12,9 @@ struct PointController: RouteCollection {
   
   func stream(req: Request) async throws -> PointJSON {
     try await req.logTime {
-      try await SendEvent.chunkPoint(
+      try await SendEvent.streamPoint(
         of: req.username,
-        chunk: req.chunk,
-        on: req.db,
-        logger: req.logger
+        on: req.db
       )
     }
   }

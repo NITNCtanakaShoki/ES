@@ -45,10 +45,9 @@ struct EventController: RouteCollection {
           fromUsername: even ? username1 : username2,
           toUsername: even ? username2 : username1,
           point: Int.random(in: 1...10_000_000),
-          createdAt: date.addingTimeInterval(TimeInterval(n))
+          date: date.addingTimeInterval(TimeInterval(n))
         )
       }
-      print("⭐️", events.map { $0.date == nil }.count)
       try await events.create(on: req.db)
       count -= bulkCount
       loopCount += 1

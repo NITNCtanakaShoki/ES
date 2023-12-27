@@ -27,12 +27,13 @@ final class SendEvent: Model {
     fromUsername: User.IDValue,
     toUsername: User.IDValue,
     point: Int,
-    createdAt: Date
+    date: Date
   ) {
     self.id = id
     self.$from.id = fromUsername
     self.$to.id = toUsername
     self.point = point
+    self.date = date
   }
 }
 
