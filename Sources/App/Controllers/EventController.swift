@@ -33,7 +33,7 @@ struct EventController: RouteCollection {
     let username2 = try req.parameters.require("username2")
     
     let date = Date()
-    let chunk = 100_000
+    let chunk = 10_000
     
     var loopCount = 0
     while count > 0 {
