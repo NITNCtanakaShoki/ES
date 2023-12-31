@@ -1,5 +1,6 @@
 import Fluent
 import Vapor
+import PostgresKit
 
 struct UserController: RouteCollection {
   
@@ -17,19 +18,8 @@ struct UserController: RouteCollection {
   }
   
   func delete(req: Request) async throws -> HTTPStatus {
-    let username = try req.username
-    try await req.db.transaction { transaction in
-      try await SendEvent.query(on: transaction)
-        .group(.or) {
-          $0
-            .filter(\.$from.$id == username)
-            .filter(\.$to.$id == username)
-        }
-        .delete()
-      try await User.query(on: transaction)
-        .filter(\.$id == username)
-        .delete()
-    }
+    let sql = req.db as! SQLDatabase
+    _ = try await sql.raw("TRUNCATE users CASCADE").all()
     return .noContent
   }
   
