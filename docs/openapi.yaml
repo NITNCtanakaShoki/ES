@@ -6,10 +6,67 @@ servers:
   - url: 'http://localhost:8080'
     description: 開発環境
 paths:
-  '/point/stream/{username}':
+  '/event/random/{count}/{username1}/{username2}':
+    post:
+      description: 指定した2人のユーザー間で指定した回数だけ1から10,000,000の範囲のランダムなポイント量を取引するイベントを生成する
+      operationId: CreateRandomCountEventBetweenTwoUsers
+      parameters:
+        - name: count
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 生成するイベント数
+        - name: username1
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザー名1
+        - name: username2
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザー名2
+      responses:
+        '204':
+          description: 成功時
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/event/count':
     get:
-      description: Stream方式で取得したポイントを返す
-      operationId: PointStream
+      description: 全ユーザーを含む存在するポイント取引イベントの総数を返す
+      operationId: GetAllEventCount
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                type: integer
+                description: イベント数
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/event/count/{username}':
+    get:
+      description: 指定したユーザーに関係するポイント取引イベントの総数を返す
+      operationId: GetEventCountOfUser
       parameters:
         - name: username
           in: path
@@ -23,18 +80,279 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                items:
-                  $ref: '#/components/schemas/Point'
-
+                type: integer
+                description: イベント数
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/point/stream/{username}':
+    get:
+      description: ストリーミング処理で算出した指定したユーザーの現在の所持ポイントと処理時間を返す
+      operationId: GetPointByStream
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/point/chunk/{chunk-size}/{username}':
+    get:
+      description: チャンク処理で算出した指定したユーザーの現在の所持ポイントと処理時間を返す
+      operationId: GetPointByChunk
+      parameters:
+        - name: chunk-size
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 1つのチャンクのイベント数
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/point/paging-offset/{page-size}/{username}':
+    get:
+      description: OFFSETでのページング処理で算出した指定したユーザーの現在の所持ポイントと処理時間を返す
+      operationId: GetPointByPagingOffset
+      parameters:
+        - name: page-size
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 1ページのイベント数
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/point/paging-last/{page-size}/{username}':
+    get:
+      description: ページ末イベントを利用したページング処理で算出した指定したユーザーの現在の所持ポイントと処理時間を返す
+      operationId: GetPointByPagingLast
+      parameters:
+        - name: page-size
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 1ページのイベント数
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/point/paging-last-async/{paging-size}/{username}':
+    get:
+      description: 並行化したページ末イベントを利用したページング処理で算出した指定したユーザーの現在の所持ポイントと処理時間を返す
+      operationId: GetPointByPagingLastAsync
+      parameters:
+        - name: paging-size
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 1ページのイベント数
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '200':
+          description: 成功時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/user':
+    delete:
+      description: 全取引イベントごと全ユーザーを削除する
+      operationId: DeleteAllUsers
+      responses:
+        '204':
+          description: 成功時
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/user/{username}':
+    post:
+      description: 指定したユーザーを作成する
+      operationId: CreateUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '204':
+          description: 成功時
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: 指定したユーザーを削除する
+      operationId: DeleteUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザ名
+      responses:
+        '204':
+          description: 成功時
+        '422':
+          description: 検証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
-    schemas:
-        Point:
-          type: object
-          properties:
-            point:
-              type: integer
-              description: ポイント
-            time:
-              type: number
-              description: ポイント集計にかかった時間[sec]
+  schemas:
+    Point:
+      type: object
+      properties:
+        point:
+          type: integer
+          description: ポイント
+        time:
+          type: number
+          description: ポイント集計にかかった時間[sec]
+    Error:
+      type: object
+      properties:
+        error:
+          type: boolean
+          description: エラーかどうか
+        reason:
+          type: string
+          description: エラーの原因
